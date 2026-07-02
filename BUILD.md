@@ -1,6 +1,6 @@
 # Build Log
 
-> Session date: Thu Jul 02 2026
+> Session date: Thu Jul 02 2026 (continued)
 
 ## What We Built
 
@@ -52,11 +52,37 @@
 - **Build**: `npm run build` passes (TypeScript + Next.js compilation)
 - **Test count**: 3 suites, 95 tests, all passing
 
-### Phase 6 — Docs & CI (this session)
+### Phase 6 — Docs & CI
 - **README.md**: Complete rewrite with worker docs, troubleshooting guide, rate limit table, project structure, deployment options
 - **BUILD.md**: This file — session log
 - **CI**: `.github/workflows/ci.yml` — lint, test (95), build, and E2E stages with PostgreSQL service
 - **Scripts**: Added `worker` and `test:e2e` to `package.json`
+
+### Phase 7 — Code Review Fixes (this session)
+- **Medium priority fixes**: Fixed z.any() in updateProjectSchema, URL.revokeObjectURL leak in video editor, removed dead error-boundary.tsx, added data-testid E2E selectors, removed dead addRetryJob/processRetryJob code, added @updatedAt to Subscription model, fixed PLAFTORM_EMOJIS typo, merged duplicate Suspense import, added upload button logic
+- **CRITICAL security**: Added mandatory CRON_SECRET auth to process-ad (was fully open), render/process, and retry-queue (was conditionally bypassable). Rejected placeholder JWT_SECRET values with 32-char minimum enforcement
+- **HIGH security**: Middleware now cryptographically verifies JWT (not just cookie existence). Auth cookie uses SameSite=Strict. OTP comparison uses crypto.timingSafeEqual. File uploads validate magic bytes + enforce size limits (10MB audio, 100MB assets). Rate limiting added to all 7 payment/AI-costly routes
+- **Rate limiter race condition**: Fixed with atomic redis.incr() (was non-atomic get-then-set)
+- **Ad ownership**: consume-credit now validates ad ownership before allowing claim
+- **Webhook idempotency**: Deduplicates subscription.charged events via Redis to prevent period extension
+- **OTP rate limiting**: Fixed race condition in send-otp with atomic INCR, now returns 429 when over limit
+- **Audio upload MIME validation**: Replaced client-trusted file.type check with magic byte signatures
+- **Test coverage**: Expanded from 95 → 147 tests (+55%)
+  - `test/integration.test.ts`: Auth, rate limiting, webhooks, OTP, uploads, CRON auth, credit system (36 tests)
+  - `test/worker.test.ts`: Full transcribe → generate → TTS → upload pipeline with mocked APIs (16 tests)
+  - `test/auth-flow.test.ts`: Register → login → session → logout lifecycle, token expiry, plan extraction (20 tests)
+
+### Phase 8 — BUILD.md Plan Items (this session)
+- **Migrated middleware.ts → proxy.ts** (Next.js 16 convention — no more deprecation warnings)
+- **Replaced next-pwa**: Removed broken plugin; added manual manifest.json (no more unrecognized keys warning)
+- **Created `.env.example`** documenting all 18 environment variables with descriptions
+- **CSRF protection**: Added `requireCsrf()` helper checking Origin/Referer against BASE_URL; applied to all payment/credit/upload routes
+- **Auth cookie hardening**: Renamed `vc_token` → `__Host-vc_token` (binds to origin, secure: true required); backward-compat in proxy.ts
+- **Body size limits**: Added `requireBodySize()` with per-route limits (100KB default, 15MB audio, 110MB assets); returns 413
+- **Prisma connection pooling**: Configured max 20 connections, 30s idle timeout, 5s connect timeout, 7500 max uses
+- **Health endpoint**: Created `/api/health` checking DB + Redis (200 healthy / 503 degraded); Docker healthcheck wired
+- **Idempotent credit deduction**: Added `idempotencyKey` to consume-credit with Redis dedup (24h TTL)
+- **Docker worker service**: Added `worker` service to docker-compose.yml with BullMQ + all env vars
 
 ## Next Steps
 
@@ -69,18 +95,17 @@
 ### Optional Enhancements
 - Add Remotion or Shotstack for advanced video rendering (beyond Cloudinary URL composition)
 - Add Sentry or similar error tracking for production monitoring
-- Add rate limit bypass for admin/pro users
-- Implement proper credit deduction with Stripe-like idempotency keys
-- Add WebSocket-based real-time ad status updates (instead of polling)
+- Add rate limit bypass for Pro users (skip rate limits for `plan: 'pro'`)
+- Add WebSocket/SSE-based real-time ad status updates (instead of polling)
 - Add admin dashboard for managing users and monitoring jobs
 - Add more comprehensive integration tests against a test database
 - Add Storybook for component documentation
 - Set up staging/preview deployments (Vercel Preview or similar)
 
 ### Known Issues
-- Build warns about `next-pwa` config (unrecognized keys) — PWA plugin needs a Next.js 16-compatible update
-- Middleware uses deprecated `middleware.ts` convention — Next.js 16 recommends `proxy.ts`
 - Redis connection errors during `next build` when Redis is not running locally (build still succeeds)
+- No client-side CSRF token generation — Origin/Referer header check is relied upon for state-changing endpoints
+- Video rendering uses Cloudinary URL composition (limited); Remotion or Shotstack would enable complex multi-layer 9:16 renders
 
 ## Next Implementation Plan
 
@@ -97,20 +122,15 @@
 ### 2. Testing Gaps
 | Priority | Task | Details |
 |----------|------|---------|
-| P1 | Integration tests with real DB | Add test suite that runs against a test PostgreSQL database to test API routes end-to-end |
-| P1 | Worker processing tests | Test the full Whisper → GPT → ElevenLabs pipeline with mock API responses |
-| P1 | Auth flow tests | Register → login → session persistence → logout → redirect |
+| P1 | E2E CI pipeline | Run Playwright tests in CI with a working server + test DB |
+| P2 | Integration tests with real DB | Add test suite that runs against a test PostgreSQL database to test API routes end-to-end |
 | P2 | Rate limit integration tests | Verify 429 responses when limits are exceeded |
 | P2 | Payment webhook tests | Test Razorpay webhook signature verification with real payloads |
-| P2 | E2E CI pipeline | Ensure Playwright tests run in CI with a working server + test DB |
 
 ### 3. Developer Experience
 | Priority | Task | Details |
 |----------|------|---------|
-| P0 | Fix middleware deprecation | Migrate from `middleware.ts` to `proxy.ts` (Next.js 16 convention) |
-| P0 | Fix next-pwa config | Update or replace PWA plugin to be Next.js 16 compatible |
 | P1 | Add `npm run db:push` script | For quick schema sync without migration files |
-| P1 | Create `.env.example` | Document every env var with descriptions and placeholder values |
 | P1 | Add Storybook | Component library for DashboardLayout, ErrorBoundary, PaymentModal, etc. |
 | P2 | Supabase/Neon local setup | Document how to connect to Neon free tier PostgreSQL |
 
@@ -146,4 +166,4 @@
 
 ---
 
-*Last pushed: Thu Jul 02 2026 to github.com/PaddyCH96/voicecart*
+*Last pushed: Thu Jul 02 2026 to github.com/PaddyCH96/voicecart — 6 commits: `22dc855..654d0a9`*
