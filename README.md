@@ -33,7 +33,7 @@ VoiceCart is a Next.js 16 (App Router) application for creating AI-powered audio
 - **Payments**: Razorpay (orders, subscriptions, webhooks)
 - **SMS/OTP**: MSG91
 - **Queue/Rate Limit**: BullMQ + Upstash Redis
-- **Testing**: Jest + RTL (95 tests), Playwright (12 E2E scenarios)
+- **Testing**: Jest + RTL (147 tests), Playwright (12 E2E scenarios)
 - **Styling**: Tailwind CSS 4
 - **Logging**: Pino structured logger
 - **CI**: GitHub Actions (lint, test, build, E2E)
@@ -73,7 +73,7 @@ npm run worker
 ### Testing
 
 ```bash
-npm test            # Unit + integration (95 tests)
+npm test            # Unit + integration (147 tests)
 npm run test:e2e    # Playwright E2E (requires dev server)
 ```
 
@@ -101,4 +101,4 @@ docker compose up worker      # Worker only (http://localhost:3004)
 
 ## Build History
 
-See [BUILD.md](./BUILD.md) for the full session log.
+See [PHASE.md](./PHASE.md) for the full session log and implementation progress.

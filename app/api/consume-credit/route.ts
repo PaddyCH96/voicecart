@@ -34,16 +34,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check user has credits
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (user.creditsBalance <= 0) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
-    }
-
     // Check ad exists and is completed
     const ad = await prisma.ad.findUnique({ where: { id: adId } });
     if (!ad) {
@@ -59,13 +49,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ad already claimed by another user' }, { status: 403 });
     }
 
-    // Decrement credits and link ad to user in a transaction
+    // Atomic: check credits AND update in single transaction with row-level locking
     const updatedUser = await prisma.$transaction(async (tx) => {
-      await tx.ad.update({
-        where: { id: adId },
-        data: { userId },
+      // Lock and check user credits atomically
+      const user = await tx.user.findUnique({ 
+        where: { id: userId },
+        select: { creditsBalance: true }
       });
+      if (!user) throw new Error('User not found');
+      if (user.creditsBalance <= 0) throw new Error('Insufficient credits');
 
+      // Update ad and decrement credits atomically
+      await tx.ad.update({ where: { id: adId }, data: { userId } });
       return tx.user.update({
         where: { id: userId },
         data: { creditsBalance: { decrement: 1 } },
@@ -79,11 +74,15 @@ export async function POST(req: NextRequest) {
       await redis.set(dedupKey, updatedUser.creditsBalance, { ex: 86400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      creditsBalance: updatedUser.creditsBalance,
-    });
+    return NextResponse.json({ success: true, creditsBalance: updatedUser.creditsBalance });
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to consume credit';
+    if (message === 'Insufficient credits') {
+      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
+    }
+    if (message === 'User not found') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
     console.error('Consume credit error:', error);
     return NextResponse.json({ error: 'Failed to consume credit' }, { status: 500 });
   }

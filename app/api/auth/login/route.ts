@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  await deleteAuthCookie();
-  return NextResponse.json({ success: true });
+  try {
+    await deleteAuthCookie();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
+  }
 }

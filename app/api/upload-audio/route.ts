@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     });
 
     const ad = await prisma.ad.create({
-      data: { inputAudioUrl: uploadResult.secure_url, status: 'processing' },
+      data: { inputAudioUrl: uploadResult.secure_url, status: 'processing', userId: session.id },
     });
 
     await prisma.adProcessingJob.create({

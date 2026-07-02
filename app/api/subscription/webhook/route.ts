@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       .update(bodyText)
       .digest('hex');
 
-    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
+    if (signature.length !== expectedSignature.length || !crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 

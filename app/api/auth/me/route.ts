@@ -32,7 +32,10 @@ export async function PUT(req: NextRequest) {
     const updateData: Record<string, string> = {};
     if (name?.trim()) updateData.name = name.trim();
     if (email?.trim()) {
-      const existing = await prisma.user.findUnique({ where: { email: email.trim() } });
+      // Use transaction to prevent race condition on email uniqueness
+      const existing = await prisma.$transaction(async (tx) => {
+        return tx.user.findUnique({ where: { email: email.trim() } });
+      });
       if (existing && existing.id !== session.id) {
         return NextResponse.json({ error: 'Email already in use' }, { status: 409 });
       }

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Send via MSG91
     if (process.env.MSG91_AUTH_KEY) {
       try {
-        await fetch('https://control.msg91.com/api/v5/otp', {
+        const smsResponse = await fetch('https://control.msg91.com/api/v5/otp', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -46,9 +46,11 @@ export async function POST(req: NextRequest) {
             otp,
           }),
         });
+        if (!smsResponse.ok) {
+          console.error(`[send-otp] MSG91 SMS failed: ${smsResponse.status}`);
+        }
       } catch (smsError) {
         console.error('MSG91 SMS error:', smsError);
-        // Don't fail the request - OTP is still in Redis for dev testing
       }
     } else {
       // Dev mode: log OTP to console
