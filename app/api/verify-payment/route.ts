@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession, requireCsrf } from '@/lib/auth';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { verifyPaymentSchema } from '@/lib/validation';
@@ -17,6 +17,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const csrfError = await requireCsrf(req);
+    if (csrfError) return csrfError;
 
     const blocked = await rateLimit(`verify-payment:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
     if (blocked) return blocked;

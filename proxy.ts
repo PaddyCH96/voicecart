@@ -7,7 +7,7 @@ const PROTECTED_PAGES = [
 ];
 
 export async function proxy(req: NextRequest) {
-  const token = req.cookies.get('vc_token')?.value;
+  const token = req.cookies.get('__Host-vc_token')?.value || req.cookies.get('vc_token')?.value;
   const path = req.nextUrl.pathname;
 
   const isAuthPage = path.startsWith('/login') || path.startsWith('/register');

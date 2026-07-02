@@ -81,6 +81,7 @@ export const verifyPaymentSchema = z.object({
 
 export const consumeCreditSchema = z.object({
   adId: z.string().uuid('Invalid ad ID'),
+  idempotencyKey: z.string().min(1).max(128).optional(),
 });
 
 export const subscriptionCreateSchema = z.object({

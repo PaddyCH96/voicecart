@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import cloudinary from '@/lib/cloudinary';
-import { getSession } from '@/lib/auth';
+import { getSession, requireCsrf, requireBodySize } from '@/lib/auth';
 import { uploadAudioSchema } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 import { addAdProcessingJob } from '@/lib/queue';
@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const csrfError = await requireCsrf(req);
+    if (csrfError) return csrfError;
+
+    const sizeError = await requireBodySize(req, 'upload-audio');
+    if (sizeError) return sizeError;
 
     const blocked = await rateLimit(`upload:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
     if (blocked) return blocked;

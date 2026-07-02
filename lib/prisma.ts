@@ -6,9 +6,16 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+const POOL_CONFIG = {
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  maxUses: 7500,
+};
+
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/voicecart';
-  const pool = new pg.Pool({ connectionString });
+  const pool = new pg.Pool({ connectionString, ...POOL_CONFIG });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }

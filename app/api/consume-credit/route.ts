@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { getSession, requireCsrf } from '@/lib/auth';
+import { redis } from '@/lib/redis';
 import { consumeCreditSchema } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -8,6 +9,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const csrfError = await requireCsrf(req);
+    if (csrfError) return csrfError;
 
     const blocked = await rateLimit(`consume-credit:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
     if (blocked) return blocked;
@@ -17,9 +21,18 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
-    const { adId } = parsed.data;
+    const { adId, idempotencyKey } = parsed.data;
 
     const userId = session.id;
+
+    // Idempotency: skip if already processed
+    if (idempotencyKey) {
+      const dedupKey = `idempotent:consume-credit:${idempotencyKey}`;
+      const existing = await redis.get(dedupKey);
+      if (existing) {
+        return NextResponse.json({ success: true, creditsBalance: Number(existing), idempotent: true });
+      }
+    }
 
     // Check user has credits
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -58,6 +71,13 @@ export async function POST(req: NextRequest) {
         data: { creditsBalance: { decrement: 1 } },
       });
     });
+
+    // Store idempotency marker
+    const ik = parsed.data.idempotencyKey;
+    if (ik) {
+      const dedupKey = `idempotent:consume-credit:${ik}`;
+      await redis.set(dedupKey, updatedUser.creditsBalance, { ex: 86400 });
+    }
 
     return NextResponse.json({
       success: true,

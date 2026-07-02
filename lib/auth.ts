@@ -52,11 +52,11 @@ export async function verifyToken(token: string): Promise<AuthPayload | null> {
 export async function setAuthCookie(token: string) {
   const cookieStore = await cookies();
   cookieStore.set({
-    name: 'vc_token',
+    name: '__Host-vc_token',
     value: token,
     httpOnly: true,
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'strict',
     maxAge: 30 * 24 * 60 * 60,
   });
@@ -64,7 +64,40 @@ export async function setAuthCookie(token: string) {
 
 export async function deleteAuthCookie() {
   const cookieStore = await cookies();
-  cookieStore.delete('vc_token');
+  cookieStore.delete('__Host-vc_token');
+}
+
+export async function requireCsrf(req: Request): Promise<NextResponse | null> {
+  const origin = req.headers.get('origin');
+  const referer = req.headers.get('referer');
+  const allowed = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3003';
+
+  if (!origin && !referer) return null;
+
+  const source = origin || referer || '';
+  if (!source.startsWith(allowed)) {
+    return NextResponse.json({ error: 'CSRF: invalid origin' }, { status: 403 });
+  }
+  return null;
+}
+
+const MAX_BODY_SIZE = 1024 * 100; // 100KB default
+
+export function getBodySizeLimit(route: string): number {
+  const limits: Record<string, number> = {
+    'upload-audio': 15 * 1024 * 1024,
+    'assets': 110 * 1024 * 1024,
+  };
+  return limits[route] || MAX_BODY_SIZE;
+}
+
+export async function requireBodySize(req: Request, route: string): Promise<NextResponse | null> {
+  const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+  const maxSize = getBodySizeLimit(route);
+  if (contentLength > maxSize) {
+    return NextResponse.json({ error: `Request body too large (max ${maxSize} bytes)` }, { status: 413 });
+  }
+  return null;
 }
 
 export async function requireCronAuth(req: Request): Promise<NextResponse | null> {
@@ -81,7 +114,7 @@ export async function requireCronAuth(req: Request): Promise<NextResponse | null
 
 export async function getSession(): Promise<AuthPayload | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get('vc_token')?.value;
+  const token = cookieStore.get('__Host-vc_token')?.value;
   if (!token) return null;
   return verifyToken(token);
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { razorpay } from '@/lib/razorpay';
-import { getSession } from '@/lib/auth';
+import { getSession, requireCsrf } from '@/lib/auth';
 import { createOrderSchema } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -10,6 +10,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const csrfError = await requireCsrf(req);
+    if (csrfError) return csrfError;
 
     const blocked = await rateLimit(`create-order:${session.id}`, { maxRequests: 10, windowSeconds: 3600 });
     if (blocked) return blocked;
