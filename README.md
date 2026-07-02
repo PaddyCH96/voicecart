@@ -16,10 +16,13 @@ VoiceCart is a Next.js 16 (App Router) application for creating AI-powered audio
 - **Mobile** — Capacitor (iOS/Android) with native web view
 
 ### Security & Reliability
-- **Auth**: JWT (jose) in httpOnly cookies with bcrypt password hashing
+- **Auth**: JWT (jose) in httpOnly cookies with SameSite=Strict, bcrypt password hashing, and placeholder detection
 - **Validation**: Zod schemas for all 15+ API endpoints
-- **Rate Limiting**: Redis-backed sliding window on auth and upload endpoints
-- **Route Protection**: Middleware guards for dashboard, video, settings, assets, subscription, record, preview, success pages
+- **Rate Limiting**: Redis-backed atomic sliding window on all auth, upload, payment, and AI-costly endpoints (12 rate-limited routes)
+- **Route Protection**: Middleware cryptographically verifies JWT tokens (not just cookie existence)
+- **CRON Auth**: Mandatory bearer token (`CRON_SECRET`) on all internal processing endpoints
+- **OTP**: Timing-safe comparison (`crypto.timingSafeEqual`) to prevent brute-force side-channels
+- **File Upload**: Content-type validation via magic byte signatures + strict size limits (10MB audio, 100MB assets)
 - **Error Boundaries**: React ErrorBoundary component + global error page + custom 404
 
 ### Tech Stack
@@ -29,11 +32,72 @@ VoiceCart is a Next.js 16 (App Router) application for creating AI-powered audio
 - **Media**: Cloudinary (images, video, audio storage + transformation)
 - **Payments**: Razorpay (orders, subscriptions, webhooks)
 - **SMS/OTP**: MSG91
-- **Queue/Rate Limit**: BullMQ + Upstash Redis (in-memory fallback)
+- **Queue/Rate Limit**: BullMQ + Upstash Redis
 - **Testing**: Jest + RTL (95 tests), Playwright (12 E2E scenarios)
 - **Styling**: Tailwind CSS 4
 - **Logging**: Pino structured logger
 - **CI**: GitHub Actions (lint, test, build, E2E)
+- **Container**: Docker multi-stage build with separate web + worker services
+
+## Feature Pipeline
+
+How an audio recording becomes a finished ad:
+
+1. **Record** — User records 5-60s audio in browser (`/record`)
+2. **Upload** — Audio sent to `/api/upload-audio`, stored in Cloudinary (auth + rate-limited)
+3. **Queue** — BullMQ job created for async processing (auto-retry on failure)
+4. **Transcribe** — Worker calls OpenAI Whisper (Hindi-optimized)
+5. **Generate** — GPT-4o-mini creates Instagram/WhatsApp/Hook copy
+6. **Voiceover** — ElevenLabs generates Hindi TTS voiceover
+7. **Delivery** — User views/downloads/shares result on `/success`
+
+Worker runs via `npm run worker` or the `worker` Docker service (requires Redis).
+
+## Quick Start
+
+### Development
+
+```bash
+npm install
+npx prisma generate
+npx prisma db push
+npm run dev
+```
+
+### Background Worker
+
+```bash
+npm run worker
+```
+
+### Testing
+
+```bash
+npm test            # Unit + integration (95 tests)
+npm run test:e2e    # Playwright E2E (requires dev server)
+```
+
+### Docker
+
+```bash
+docker compose up --build    # All services (app + worker + postgres + redis)
+docker compose up app         # Web app only
+docker compose up worker      # Worker only (http://localhost:3004)
+```
+
+### Key Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | Min 32 chars, must not be a placeholder |
+| `CRON_SECRET` | Yes | Shared secret for internal endpoint auth |
+| `OPENAI_API_KEY` | Yes | Whisper + GPT-4o-mini |
+| `ELEVENLABS_API_KEY` | For voiceover | ElevenLabs TTS |
+| `CLOUDINARY_*` | Yes | Media storage + rendering |
+| `RAZORPAY_*` | For payments | Orders + subscriptions |
+| `MSG91_AUTH_KEY` | For OTP | SMS delivery |
+| `REDIS_HOST` / `REDIS_PORT` | Yes | BullMQ + rate limiting |
 
 ## Build History
 
