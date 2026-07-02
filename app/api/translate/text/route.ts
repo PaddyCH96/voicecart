@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { openai } from '@/lib/openai';
 import { translateTextSchema } from '@/lib/validation';
+import { rateLimit } from '@/lib/rate-limit';
 
 const TRANSLATION_PROMPT = (text: string, lang: string) =>
   `Translate the following Hindi text to ${lang}. Preserve all emojis and formatting. Output ONLY the translated text, nothing else.\n\n${text}`;
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const blocked = await rateLimit(`translate-text:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
+    if (blocked) return blocked;
 
     const body = await req.json();
     const parsed = translateTextSchema.safeParse(body);

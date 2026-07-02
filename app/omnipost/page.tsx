@@ -15,7 +15,7 @@ const LANGS: Record<Lang, string> = {
   mr: 'Marathi',
 };
 
-const PLAFTORM_EMOJIS: Record<string, string> = {
+const PLATFORM_EMOJIS: Record<string, string> = {
   Instagram: '📸',
   WhatsApp: '💬',
   X: '🐦',
@@ -215,7 +215,7 @@ export default function OmniPostPage() {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">{PLAFTORM_EMOJIS[item.platform] || '📝'}</span>
+                      <span className="text-lg">{PLATFORM_EMOJIS[item.platform] || '📝'}</span>
                       <span className="text-[13px] font-medium dark:text-white">{item.platform}</span>
                     </div>
                     <div className="flex items-center gap-3">

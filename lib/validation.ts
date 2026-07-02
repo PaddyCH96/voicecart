@@ -55,9 +55,17 @@ export const createProjectSchema = z.object({
   type: z.enum(['audio', 'video']),
 });
 
+const assetLayerSchema = z.object({
+  id: z.string(),
+  type: z.enum(['video', 'image', 'text', 'audio']),
+  content: z.string(),
+  start: z.number(),
+  end: z.number(),
+});
+
 export const updateProjectSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  assets: z.any().optional(),
+  assets: z.object({ layers: z.array(assetLayerSchema) }).optional(),
   status: z.string().optional(),
 });
 

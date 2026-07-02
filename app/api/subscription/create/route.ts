@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { getSession } from '@/lib/auth';
 import { subscriptionCreateSchema } from '@/lib/validation';
+import { rateLimit } from '@/lib/rate-limit';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_stub',
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const blocked = await rateLimit(`subscription-create:${session.id}`, { maxRequests: 5, windowSeconds: 3600 });
+    if (blocked) return blocked;
 
     const body = await req.json();
     const parsed = subscriptionCreateSchema.safeParse(body);

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { FolderOpen, Image as ImageIcon, Video, Music, Trash2 } from 'lucide-react';
+import { FolderOpen, Image as ImageIcon, Video, Music, Trash2, Upload } from 'lucide-react';
 
 interface Asset {
   id: string;
@@ -33,6 +33,24 @@ export default function AssetsPage() {
     setAssets(assets.filter(a => a.id !== id));
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/assets/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) setAssets(prev => [...prev, data]);
+    } catch (err) {
+      console.error('Upload failed:', err);
+    }
+    e.target.value = '';
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', year: 'numeric'
@@ -47,8 +65,9 @@ export default function AssetsPage() {
             <h1 className="text-[24px] font-semibold tracking-[-0.03em] dark:text-white">Media Assets</h1>
             <p className="text-[13px] text-[#A3A3A3] mt-1">Manage all uploaded images, video clips, and audio files.</p>
           </div>
-          <button className="btn-primary flex items-center gap-2">
-            Upload File
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+          <button onClick={handleUploadClick} className="btn-primary flex items-center gap-2">
+            <Upload size={15} /> Upload File
           </button>
         </div>
 

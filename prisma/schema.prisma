@@ -97,4 +97,5 @@ model Subscription {
   currentPeriodStart     DateTime @default(now())
   currentPeriodEnd       DateTime @default(now())
   createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt @default(now())
 }

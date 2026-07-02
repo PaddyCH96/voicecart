@@ -32,9 +32,12 @@ export async function POST(
     //   - Cloudinary video generation
     // See /docs/rendering.md for integration guide
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const cronSecret = process.env.CRON_SECRET;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (cronSecret) headers['authorization'] = `Bearer ${cronSecret}`;
     fetch(`${baseUrl}/api/projects/${id}/render/process`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     }).catch(err => console.error('[render] Trigger error:', err));
 
     return NextResponse.json({ success: true, status: 'processing' });

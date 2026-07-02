@@ -128,6 +128,8 @@ export default function VideoEditorPage() {
   };
 
   const removeLayer = (layerId: string) => {
+    const layer = layers.find(l => l.id === layerId);
+    if (layer && layer.content.startsWith('blob:')) URL.revokeObjectURL(layer.content);
     setLayers(layers.filter(l => l.id !== layerId));
   };
 

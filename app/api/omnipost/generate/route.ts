@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { openai } from '@/lib/openai';
 import { omnipostSchema } from '@/lib/validation';
+import { rateLimit } from '@/lib/rate-limit';
 
 const SYSTEM_PROMPT = `You are a multilingual social commerce content creator. Given a Hindi transcript of a seller describing their product, generate platform-optimized marketing copy for 10 platforms.
 
@@ -32,6 +33,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const blocked = await rateLimit(`omnipost:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
+    if (blocked) return blocked;
 
     const body = await req.json();
     const parsed = omnipostSchema.safeParse(body);

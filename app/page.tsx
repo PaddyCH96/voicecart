@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen px-6 pt-8 pb-6">
       {/* Wordmark */}
-      <header className="a-enter mb-auto">
+      <header className="a-enter mb-auto" data-testid="wordmark-header">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-[8px] bg-[#0A0A0A] flex items-center justify-center">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

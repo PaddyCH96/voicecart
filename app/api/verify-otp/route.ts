@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 import { prisma } from "@/lib/prisma";
@@ -20,7 +21,12 @@ export async function POST(req: NextRequest) {
     // Verify OTP from Redis
     const storedOtp = await redis.get(`otp:${phone}`);
 
-    if (!storedOtp || storedOtp !== otp) {
+    if (!storedOtp || typeof storedOtp !== 'string' || storedOtp.length !== otp.length) {
+      return NextResponse.json({ error: 'गलत OTP। कृपया पुनः प्रयास करें।' }, { status: 400 });
+    }
+    const otpBuf = Buffer.from(otp);
+    const storedBuf = Buffer.from(storedOtp);
+    if (!timingSafeEqual(otpBuf, storedBuf)) {
       return NextResponse.json({ error: 'गलत OTP। कृपया पुनः प्रयास करें।' }, { status: 400 });
     }
 

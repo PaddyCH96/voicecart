@@ -22,6 +22,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+# Install tsx for background worker execution
+RUN npm install -g tsx
+
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
@@ -34,6 +37,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+
+# Copy worker source for background processing
+COPY worker.ts ./worker.ts
+COPY tsconfig.json ./tsconfig.json
 
 RUN chmod -R 777 /app/node_modules/@prisma/engines && \
     chmod -R 777 /app/node_modules/prisma && \

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { renderProjectVideo } from '@/lib/render-video';
+import { requireCronAuth } from '@/lib/auth';
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireCronAuth(req);
+  if (authError) return authError;
+
   const { id } = await params;
   console.log(`[render/process] Starting render for project ${id}`);
 

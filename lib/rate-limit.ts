@@ -20,19 +20,17 @@ export async function rateLimit(
   const { maxRequests, windowSeconds, message } = { ...DEFAULTS, ...config };
   const redisKey = `ratelimit:${key}`;
 
-  const current = await redis.get<number>(redisKey) || 0;
+  const current = await redis.incr(redisKey);
 
-  if (current >= maxRequests) {
+  if (current === 1) {
+    await redis.expire(redisKey, windowSeconds);
+  }
+
+  if (current > maxRequests) {
     return NextResponse.json(
       { error: message },
       { status: 429 }
     );
-  }
-
-  if (current === 0) {
-    await redis.set(redisKey, 1, { ex: windowSeconds });
-  } else {
-    await redis.set(redisKey, current + 1, { ex: windowSeconds });
   }
 
   return null;

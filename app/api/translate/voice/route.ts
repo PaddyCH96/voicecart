@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import cloudinary from '@/lib/cloudinary';
 import { translateVoiceSchema } from '@/lib/validation';
+import { rateLimit } from '@/lib/rate-limit';
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 const ELEVENLABS_VOICE_ID = 'XB0fDUnXU5powFXDhCwa';
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const blocked = await rateLimit(`translate-voice:${session.id}`, { maxRequests: 10, windowSeconds: 3600 });
+    if (blocked) return blocked;
 
     const body = await req.json();
     const parsed = translateVoiceSchema.safeParse(body);

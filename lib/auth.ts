@@ -1,10 +1,22 @@
 import { jwtVerify, SignJWT } from 'jose';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+
+const PLACEHOLDER_SECRETS = [
+  'change-this-to-a-long-random-string-at-least-32-chars',
+  'your-secret-key-at-least-32-characters-long',
+];
 
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required');
+  }
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long');
+  }
+  if (PLACEHOLDER_SECRETS.includes(secret)) {
+    throw new Error('JWT_SECRET must be changed from the default placeholder value');
   }
   return new TextEncoder().encode(secret);
 }
@@ -45,6 +57,7 @@ export async function setAuthCookie(token: string) {
     httpOnly: true,
     path: '/',
     secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
     maxAge: 30 * 24 * 60 * 60,
   });
 }
@@ -52,6 +65,18 @@ export async function setAuthCookie(token: string) {
 export async function deleteAuthCookie() {
   const cookieStore = await cookies();
   cookieStore.delete('vc_token');
+}
+
+export async function requireCronAuth(req: Request): Promise<NextResponse | null> {
+  const authHeader = req.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
+  }
+  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  return null;
 }
 
 export async function getSession(): Promise<AuthPayload | null> {

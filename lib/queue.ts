@@ -41,12 +41,6 @@ export async function addAdProcessingJob(adId: string, language: string) {
   });
 }
 
-export async function addRetryJob(adId: string, language: string, attempt: number) {
-  await retryQueue.add('retry-ad', { adId, language, attempt }, {
-    delay: Math.pow(2, attempt) * 5000,
-  });
-}
-
 async function processAdJob(job: Job<{ adId: string; language: string }>) {
   const { adId } = job.data;
   console.log(`[queue] Processing ad ${adId} (attempt ${job.attemptsMade + 1})`);
@@ -148,25 +142,11 @@ async function processAdJob(job: Job<{ adId: string; language: string }>) {
   }
 }
 
-async function processRetryJob(job: Job<{ adId: string; language: string; attempt: number }>) {
-  const { adId, language } = job.data;
-  console.log(`[retry-queue] Retrying ad ${adId} (attempt ${job.data.attempt})`);
-  
-  await prisma.adProcessingJob.updateMany({
-    where: { adId, status: 'pending' },
-    data: { status: 'processing' },
-  });
-
-  await addAdProcessingJob(adId, language);
-}
-
 export function startQueueWorkers() {
   const worker = new Worker('ad-processing', processAdJob, { connection, concurrency: 2 });
-  const retryWorker = new Worker('ad-retry', processRetryJob, { connection });
 
   worker.on('completed', (job) => console.log(`[worker] Job ${job.id} completed`));
   worker.on('failed', (job, err) => console.error(`[worker] Job ${job?.id} failed:`, err?.message));
-  retryWorker.on('completed', (job) => console.log(`[retry-worker] Job ${job.id} completed`));
 
-  return { worker, retryWorker };
+  return { worker };
 }

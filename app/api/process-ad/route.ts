@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { openai } from '@/lib/openai';
 import cloudinary from '@/lib/cloudinary';
+import { requireCronAuth } from '@/lib/auth';
 import { processAdSchema } from '@/lib/validation';
 
 const HINDI_COPYWRITER_SYSTEM_PROMPT = `You are a Hindi copywriter for social commerce. Given a transcript of a seller describing their product, produce exactly this JSON:
@@ -23,6 +24,9 @@ const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 const ELEVENLABS_VOICE_ID = 'XB0fDUnXU5powFXDhCwa'; // Charlotte - good clarity
 
 export async function POST(req: NextRequest) {
+  const authError = await requireCronAuth(req);
+  if (authError) return authError;
+
   let adId: string | undefined;
   
   try {

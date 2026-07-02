@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { consumeCreditSchema } from '@/lib/validation';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const blocked = await rateLimit(`consume-credit:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
+    if (blocked) return blocked;
 
     const body = await req.json();
     const parsed = consumeCreditSchema.safeParse(body);
@@ -35,6 +39,11 @@ export async function POST(req: NextRequest) {
 
     if (ad.status !== 'completed') {
       return NextResponse.json({ error: 'Ad not yet processed' }, { status: 400 });
+    }
+
+    // Check ad is not already claimed by another user
+    if (ad.userId && ad.userId !== userId) {
+      return NextResponse.json({ error: 'Ad already claimed by another user' }, { status: 403 });
     }
 
     // Decrement credits and link ad to user in a transaction

@@ -32,8 +32,10 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/voicecart
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production-32char}
-      UPSTASH_REDIS_REST_URL: http://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-key-not-for-production-32char-minimum!!}
+      CRON_SECRET: ${CRON_SECRET:-change-this-to-a-random-cron-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       NEXT_PUBLIC_BASE_URL: http://localhost:3004
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
@@ -43,6 +45,27 @@ services:
       MSG91_AUTH_KEY: ${MSG91_AUTH_KEY:-}
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: ["node", "/usr/local/bin/tsx", "worker.ts"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/voicecart
+      JWT_SECRET: ${JWT_SECRET:-dev-key-not-for-production-32char-minimum!!}
+      CRON_SECRET: ${CRON_SECRET:-change-this-to-a-random-cron-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

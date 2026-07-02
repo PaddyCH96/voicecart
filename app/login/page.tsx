@@ -100,10 +100,10 @@ export default function LoginPage() {
                 <div className="flex gap-2 mb-4">
                   <span className="px-3 py-2.5 rounded-[10px] bg-[#FAFAFA] text-[14px] text-[#525252] font-medium border border-[#F0F0F0]">+91</span>
                   <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="Phone number" autoFocus
+                    placeholder="Phone number" autoFocus data-testid="phone-input"
                     className="flex-1 px-3.5 py-2.5 rounded-[10px] border border-[#F0F0F0] focus:border-[#D4D4D4] outline-none text-[15px] tabular-nums placeholder:text-[#D4D4D4]" />
                 </div>
-                <button onClick={handleSendOtp} disabled={loading || phone.length !== 10} className="btn-primary">
+                <button onClick={handleSendOtp} disabled={loading || phone.length !== 10} className="btn-primary" data-testid="send-otp-button">
                   {loading ? '...' : 'Send OTP'}
                 </button>
               </>
@@ -123,11 +123,11 @@ export default function LoginPage() {
 
         {tab === 'email' && (
           <div className="flex flex-col gap-3 a-scale">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" autoFocus
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" autoFocus data-testid="email-input"
               className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#F0F0F0] focus:border-[#D4D4D4] outline-none text-[15px] placeholder:text-[#D4D4D4]" />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" data-testid="password-input"
               className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#F0F0F0] focus:border-[#D4D4D4] outline-none text-[15px] placeholder:text-[#D4D4D4]" />
-            <button onClick={handleEmailLogin} disabled={loading || !email || !password} className="btn-primary mt-1">
+            <button onClick={handleEmailLogin} disabled={loading || !email || !password} className="btn-primary mt-1" data-testid="email-login-button">
               {loading ? '...' : 'Sign In'}
             </button>
           </div>

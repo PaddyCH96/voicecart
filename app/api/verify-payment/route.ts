@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { verifyPaymentSchema } from '@/lib/validation';
+import { rateLimit } from '@/lib/rate-limit';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_stub',
@@ -16,6 +17,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const blocked = await rateLimit(`verify-payment:${session.id}`, { maxRequests: 20, windowSeconds: 3600 });
+    if (blocked) return blocked;
 
     const rawBody = await req.json();
     const parsed = verifyPaymentSchema.safeParse(rawBody);

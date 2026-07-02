@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@/lib/auth';
 
 const PROTECTED_PAGES = [
   '/dashboard', '/video', '/settings', '/assets', '/subscription',
@@ -13,13 +14,13 @@ export async function middleware(req: NextRequest) {
   const isProtectedPage = PROTECTED_PAGES.some(p => path.startsWith(p));
 
   if (isAuthPage) {
-    if (token) {
+    if (token && await verifyToken(token)) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }
 
   if (isProtectedPage) {
-    if (!token) {
+    if (!token || !(await verifyToken(token))) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
   }

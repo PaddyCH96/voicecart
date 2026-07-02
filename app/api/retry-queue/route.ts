@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireCronAuth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    // Require CRON_SECRET for endpoint security
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = await requireCronAuth(req);
+    if (authError) return authError;
     const now = new Date();
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
