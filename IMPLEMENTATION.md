@@ -249,7 +249,7 @@ android {
 #### 2.5 Build Release APK/AAB
 ```bash
 cd android
-./gradlew assembleRelease  # Creates app-release.aab
+./gradlew bundleRelease  # Creates app-release.aab for Play Store
 # Upload to Play Store Console
 ```
 
@@ -268,7 +268,7 @@ cd ~/projects/voicecart
 npm run build
 npx cap sync ios
 cd ios
-open ios/App.xcworkspace  # Opens Xcode
+open App/App.xcworkspace  # Opens Xcode
 ```
 
 #### 3.3 Configure Signing in Xcode

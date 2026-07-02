@@ -25,6 +25,12 @@ function makeFallbackClient() {
     },
     incr: async (key: string): Promise<number> => {
       try { return await origIncr(key); } catch {
+        // Check if key has expired and reset if necessary
+        const ttlRaw = store.get(key + '_ttl');
+        if (ttlRaw && Date.now() > parseInt(ttlRaw, 10)) {
+          store.delete(key);
+          store.delete(key + '_ttl');
+        }
         const current = parseInt(store.get(key) || '0', 10);
         store.set(key, String(current + 1));
         return current + 1;
