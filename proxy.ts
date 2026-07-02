@@ -6,7 +6,7 @@ const PROTECTED_PAGES = [
   '/record', '/preview', '/success',
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const token = req.cookies.get('vc_token')?.value;
   const path = req.nextUrl.pathname;
 
