@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VoiceCart
 
-## Getting Started
+VoiceCart is a Next.js 16 (App Router) application for creating AI-powered audio and video ads from voice recordings. Built for Indian small-business owners to generate marketing content in Hindi and 10+ Indian languages.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Core Features
+- **Voice Recording** — Browser-based audio recording (5-60s) with waveform visualization and wake lock
+- **AI Audio Ads** — Transcription (Whisper), marketing copy generation (GPT-4o-mini), and TTS voiceover (ElevenLabs Multilingual v2)
+- **Multi-Language** — Translate text and voice to 11 Indian languages (Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, English, Hindi)
+- **Video Editor** — 9:16 canvas with timeline, layers (images, videos, text, audio), and Cloudinary-rendered output
+- **OmniPost** — Speech-to-text + AI-generated platform-specific content for 10 platforms (Instagram, WhatsApp, X, Threads, Facebook, YouTube, LinkedIn, Reels, Pinterest, Email)
+- **Payments** — Razorpay integration: single credits (₹49/ad) and Pro subscription (₹499/mo)
+- **Queue Processing** — BullMQ background job queue for ad processing with automatic retries
+- **PWA** — Installable, offline-capable, push notifications ready
+- **Mobile** — Capacitor (iOS/Android) with native web view
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Security & Reliability
+- **Auth**: JWT (jose) in httpOnly cookies with bcrypt password hashing
+- **Validation**: Zod schemas for all 15+ API endpoints
+- **Rate Limiting**: Redis-backed sliding window on auth and upload endpoints
+- **Route Protection**: Middleware guards for dashboard, video, settings, assets, subscription, record, preview, success pages
+- **Error Boundaries**: React ErrorBoundary component + global error page + custom 404
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Tech Stack
+- **Framework**: Next.js 16.2 (App Router, Turbopack)
+- **Database**: PostgreSQL via Prisma ORM
+- **AI**: OpenAI GPT-4o-mini + Whisper, ElevenLabs TTS
+- **Media**: Cloudinary (images, video, audio storage + transformation)
+- **Payments**: Razorpay (orders, subscriptions, webhooks)
+- **SMS/OTP**: MSG91
+- **Queue/Rate Limit**: BullMQ + Upstash Redis (in-memory fallback)
+- **Testing**: Jest + RTL (95 tests), Playwright (12 E2E scenarios)
+- **Styling**: Tailwind CSS 4
+- **Logging**: Pino structured logger
+- **CI**: GitHub Actions (lint, test, build, E2E)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Build History
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [BUILD.md](./BUILD.md) for the full session log.

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VoiceCart</string>
+    <string name="title_activity_main">VoiceCart</string>
+    <string name="package_name">com.voicecart.creator</string>
+    <string name="custom_url_scheme">com.voicecart.creator</string>
+</resources>

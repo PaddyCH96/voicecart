@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String           @id @default(uuid())
+  phone          String?          @unique
+  email          String?          @unique
+  name           String?
+  passwordHash   String?
+  creditsBalance Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt @default(now())
+  purchases      CreditPurchase[]
+  ads            Ad[]
+  projects       Project[]
+  assets         Asset[]
+  subscription   Subscription?
+}
+
+model CreditPurchase {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  amount            Int
+  pricePaid         Int
+  razorpayPaymentId String   @unique
+  createdAt         DateTime @default(now())
+}
+
+model Ad {
+  id                String   @id @default(uuid())
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
+  inputAudioUrl     String
+  outputAudioUrl    String?
+  transcript        String?
+  englishTranscript String?
+  generatedText     Json?
+  status            String   @default("processing")
+  createdAt         DateTime @default(now())
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  type      String   // "audio" | "video"
+  adId      String?
+  assets    Json     @default("{}")
+  status    String   @default("draft")
+  renderUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([userId])
+}
+
+model Asset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // "image" | "video" | "audio"
+  url       String
+  publicId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AdProcessingJob {
+  id          String   @id @default(uuid())
+  adId        String
+  status      String   @default("pending") // "pending" | "processing" | "completed" | "failed"
+  retryCount  Int      @default(0)
+  maxRetries  Int      @default(3)
+  nextRetryAt DateTime?
+  lastError   String?
+  language    String   @default("hi")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt @default(now())
+}
+
+model Subscription {
+  id                     String   @id @default(uuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id])
+  plan                   String   @default("free") // "free" | "pro"
+  razorpaySubscriptionId String?
+  status                 String   @default("active")
+  currentPeriodStart     DateTime @default(now())
+  currentPeriodEnd       DateTime @default(now())
+  createdAt              DateTime @default(now())
+}

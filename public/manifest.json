@@ -1,0 +1,28 @@
+{
+  "name": "VoiceCart Creator Studio",
+  "short_name": "VoiceCart",
+  "description": "अपनी आवाज़ से प्रोफेशनल ऑडियो ऐड बनाएं",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF9",
+  "theme_color": "#F97316",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "hi",
+  "dir": "ltr"
+}
