@@ -21,11 +21,14 @@ export async function POST(req: NextRequest) {
     // Store in Redis with 5 minute TTL
     await redis.set(`otp:${phone}`, otp, { ex: 300 });
 
-    // Track OTP sends per phone (max 3 per hour)
+    // Track OTP sends per phone (max 3 per hour) — atomic INCR
     const rateKey = `otp_rate:${phone}`;
-    const attempts = (await redis.get<number>(rateKey)) || 0;
-    if (attempts < 3) {
-      await redis.set(rateKey, attempts + 1, { ex: 3600 });
+    const attempts = await redis.incr(rateKey);
+    if (attempts === 1) {
+      await redis.expire(rateKey, 3600);
+    }
+    if (attempts > 3) {
+      return NextResponse.json({ error: 'Too many OTP requests. Try again later.' }, { status: 429 });
     }
 
     // Send via MSG91

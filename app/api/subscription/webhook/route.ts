@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { redis } from '@/lib/redis';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +27,15 @@ export async function POST(req: NextRequest) {
     }
 
     const event = JSON.parse(bodyText);
+
+    // Deduplicate webhook events via idempotency key
+    const eventId = event.id || `${event.event}_${event.payload?.payment?.entity?.id || Date.now()}`;
+    const dedupKey = `webhook:${eventId}`;
+    const alreadyProcessed = await redis.get(dedupKey);
+    if (alreadyProcessed) {
+      return NextResponse.json({ status: 'ok', deduplicated: true });
+    }
+    await redis.set(dedupKey, '1', { ex: 3600 });
 
     if (event.event === 'subscription.charged' || event.event === 'subscription.completed') {
       const payment = event.payload?.payment?.entity;
