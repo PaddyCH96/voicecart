@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { Metadata } from 'next';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export const metadata: Metadata = {
   title: 'Terms of Service — VoiceCart',
@@ -18,8 +20,6 @@ export default function TermsPage() {
     content = '# Terms of Service\n\nTerms not available.';
   }
 
-  const sections = content.split('\n## ');
-
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <header className="border-b border-white/10">
@@ -29,40 +29,10 @@ export default function TermsPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h2 className="text-3xl font-bold mb-8">Terms of Service</h2>
         <div className="prose prose-invert prose-sm max-w-none">
-          {sections.map((section, i) => (
-            <div key={i} className="mb-8">
-              {i === 0 ? (
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: section
-                      .replace(/^#.*$/gm, '')
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n\n/g, '</p><p>')
-                      .replace(/^(.+)$/gm, (match) => {
-                        if (match.startsWith('#') || match.startsWith('*') || match.startsWith('|')) return match;
-                        return `<p>${match}</p>`;
-                      }),
-                  }}
-                />
-              ) : (
-                <>
-                  <h3 className="text-xl font-semibold text-[#D4AF37] mb-3">{section.split('\n')[0]}</h3>
-                  <div
-                    className="text-gray-300 leading-relaxed space-y-2"
-                    dangerouslySetInnerHTML={{
-                      __html: section
-                        .replace(/^.*?\n/, '')
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-                        .replace(/\|/g, '')
-                        .replace(/\n/g, '<br/>'),
-                    }}
-                  />
-                </>
-              )}
-            </div>
-          ))}
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {content}
+          </ReactMarkdown>
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10 text-sm text-gray-500">
