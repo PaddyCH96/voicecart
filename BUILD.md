@@ -81,3 +81,69 @@
 - Build warns about `next-pwa` config (unrecognized keys) — PWA plugin needs a Next.js 16-compatible update
 - Middleware uses deprecated `middleware.ts` convention — Next.js 16 recommends `proxy.ts`
 - Redis connection errors during `next build` when Redis is not running locally (build still succeeds)
+
+## Next Implementation Plan
+
+### 1. Pre-Production Hardening
+| Priority | Task | Details |
+|----------|------|---------|
+| P0 | Deploy to staging | Provision server, set up PostgreSQL + Redis, configure all env vars, run worker |
+| P0 | Production Redis | Set up Upstash or self-hosted Redis; verify BullMQ queues and rate limiting work |
+| P0 | Worker deployment | Add `npm run worker` to production process manager (PM2/supervisord/systemd) |
+| P1 | MSG91 production config | Verify OTP delivery works with production MSG91 credentials |
+| P1 | Cloudinary production config | Verify uploads, transformations, and renders work with production Cloudinary keys |
+| P1 | Razorpay production keys | Switch from test to live keys; verify subscription webhooks |
+
+### 2. Testing Gaps
+| Priority | Task | Details |
+|----------|------|---------|
+| P1 | Integration tests with real DB | Add test suite that runs against a test PostgreSQL database to test API routes end-to-end |
+| P1 | Worker processing tests | Test the full Whisper → GPT → ElevenLabs pipeline with mock API responses |
+| P1 | Auth flow tests | Register → login → session persistence → logout → redirect |
+| P2 | Rate limit integration tests | Verify 429 responses when limits are exceeded |
+| P2 | Payment webhook tests | Test Razorpay webhook signature verification with real payloads |
+| P2 | E2E CI pipeline | Ensure Playwright tests run in CI with a working server + test DB |
+
+### 3. Developer Experience
+| Priority | Task | Details |
+|----------|------|---------|
+| P0 | Fix middleware deprecation | Migrate from `middleware.ts` to `proxy.ts` (Next.js 16 convention) |
+| P0 | Fix next-pwa config | Update or replace PWA plugin to be Next.js 16 compatible |
+| P1 | Add `npm run db:push` script | For quick schema sync without migration files |
+| P1 | Create `.env.example` | Document every env var with descriptions and placeholder values |
+| P1 | Add Storybook | Component library for DashboardLayout, ErrorBoundary, PaymentModal, etc. |
+| P2 | Supabase/Neon local setup | Document how to connect to Neon free tier PostgreSQL |
+
+### 4. Feature Additions
+| Priority | Task | Details |
+|----------|------|---------|
+| P1 | Real-time ad status | Replace polling in `/preview` with WebSocket or SSE via Redis pub/sub |
+| P1 | Video rendering upgrade | Add Remotion or Shotstack for complex multi-layer 9:16 renders (Cloudinary URL composition is limited) |
+| P1 | Admin dashboard | User management, job monitoring, rate limit overrides, revenue metrics |
+| P2 | Pro user rate limit bypass | Skip rate limiting for users with `plan: 'pro'` |
+| P2 | Idempotent credit deduction | Add idempotency key support to prevent double-charging on retry |
+| P2 | Multi-language UI | Offer the app UI itself in Hindi and other Indian languages |
+| P3 | WhatsApp Business API | Direct posting to WhatsApp Business instead of just share URL generation |
+| P3 | Instagram Reels auto-publish | Direct publishing to Instagram/Reels API |
+| P3 | Analytics dashboard | Track ad views, clicks, conversions for Pro users |
+
+### 5. Monitoring & Observability
+| Priority | Task | Details |
+|----------|------|---------|
+| P1 | Error tracking | Add Sentry for production error monitoring (already wired in ErrorBoundary) |
+| P1 | Queue monitoring | Add BullMQ Dashboard or Arena UI for queue observability |
+| P2 | Structured logging | Ship Pino logs to production log aggregator (Datadog, Logtail, etc.) |
+| P2 | Uptime monitoring | Set up health check endpoint and external monitoring |
+| P2 | Performance budgets | Track Lighthouse scores, bundle size, API latency in CI |
+
+### 6. Release & Workflow
+| Priority | Task | Details |
+|----------|------|---------|
+| P1 | Create staging branch | `git checkout -b staging` for pre-production deployments |
+| P1 | Vercel preview deployments | Connect repo to Vercel for automatic preview on PRs |
+| P2 | Semantic release | Set up automated changelog + version bump on merge to main |
+| P2 | Docker optimizations | Multi-stage build, layer caching, health checks |
+
+---
+
+*Last pushed: Thu Jul 02 2026 to github.com/PaddyCH96/voicecart*
