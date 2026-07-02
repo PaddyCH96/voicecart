@@ -99,6 +99,19 @@ docker compose up worker      # Worker only (http://localhost:3004)
 | `MSG91_AUTH_KEY` | For OTP | SMS delivery |
 | `REDIS_HOST` / `REDIS_PORT` | Yes | BullMQ + rate limiting |
 
+## Recent Updates (2026-07-03)
+
+### CI & Code Quality Fixes
+- ✅ **Fixed CI Pipeline** — Added ts-node for Jest TypeScript config parsing
+- ✅ **Fixed Markdown Rendering** — Replaced regex parser with react-markdown + remark-gfm for Privacy/Terms pages
+- ✅ **Fixed Rate Limiting** — Redis fallback now properly expires keys in dev/local mode
+- ✅ **Updated Documentation** — Corrected Android/iOS build commands in IMPLEMENTATION.md
+- ✅ **Security** — Removed dangerouslySetInnerHTML XSS risk from legal pages
+
+**Test Status:** 147 tests passing | 0 lint errors | All CodeRabbit issues resolved
+
+See [DEBUGGER.md](./DEBUGGER.md) for detailed debug session log.
+
 ## Build History
 
 See [PHASE.md](./PHASE.md) for the full session log and implementation progress.
