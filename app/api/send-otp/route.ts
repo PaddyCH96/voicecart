@@ -21,12 +21,16 @@ export async function POST(req: NextRequest) {
     // Store in Redis with 5 minute TTL
     await redis.set(`otp:${phone}`, otp, { ex: 300 });
 
-    // Track OTP sends per phone (max 3 per hour) — atomic INCR
+    // Track OTP sends per phone (max 3 per hour) — USE ATOMIC LUA SCRIPT
     const rateKey = `otp_rate:${phone}`;
-    const attempts = await redis.incr(rateKey);
-    if (attempts === 1) {
-      await redis.expire(rateKey, 3600);
-    }
+    const luaScript = `
+      local current = redis.call('INCR', KEYS[1])
+      if current == 1 then
+        redis.call('EXPIRE', KEYS[1], ARGV[1])
+      end
+      return current
+    `;
+    const attempts = (await redis.eval(luaScript, [rateKey], [3600])) as number;
     if (attempts > 3) {
       return NextResponse.json({ error: 'Too many OTP requests. Try again later.' }, { status: 429 });
     }
