@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     // Step 1: Transcribe audio using OpenAI Whisper
     console.log(`[process-ad] Starting transcription for ad ${adId}`);
     const audioResponse = await fetch(ad.inputAudioUrl);
+    if (!audioResponse.ok) throw new Error(`Failed to fetch audio: ${audioResponse.status}`);
     const audioBuffer = await audioResponse.arrayBuffer();
     const audioFile = new File([audioBuffer], 'audio.webm', { type: 'audio/webm' });
 
@@ -75,7 +76,10 @@ export async function POST(req: NextRequest) {
       response_format: { type: 'json_object' },
     });
 
-    const generatedText = JSON.parse(textCompletion.choices[0].message.content || '{}');
+    const rawContent = textCompletion.choices[0]?.message?.content;
+    if (!rawContent) throw new Error('Empty response from AI');
+    const generatedText = JSON.parse(rawContent);
+    if (!generatedText || typeof generatedText !== 'object') throw new Error('Invalid JSON structure from AI');
     console.log(`[process-ad] Generated text:`, generatedText);
 
     // Step 3: Generate clean voiceover using ElevenLabs TTS

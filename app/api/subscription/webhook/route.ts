@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       .update(bodyText)
       .digest('hex');
 
-    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
+    if (signature.length !== expectedSignature.length || !crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
     if (alreadyProcessed) {
       return NextResponse.json({ status: 'ok', deduplicated: true });
     }
-    await redis.set(dedupKey, '1', { ex: 3600 });
+    // SECURITY FIX: Reduced TTL from 3600s (1hr) to 300s (5min) to prevent replay attacks
+    await redis.set(dedupKey, '1', { ex: 300 });
 
     if (event.event === 'subscription.charged' || event.event === 'subscription.completed') {
       const payment = event.payload?.payment?.entity;

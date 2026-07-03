@@ -36,12 +36,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3003';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+      return NextResponse.json({ error: 'NEXT_PUBLIC_BASE_URL not configured' }, { status: 500 });
+    }
+    const cronSecret = process.env.CRON_SECRET;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (cronSecret) headers['authorization'] = `Bearer ${cronSecret}`;
     const results = await Promise.allSettled(
       (dueJobs as { adId: string; language: string }[]).map(job =>
         fetch(`${baseUrl}/api/process-ad`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ adId: job.adId, language: job.language }),
         })
       )
