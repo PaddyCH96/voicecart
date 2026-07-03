@@ -72,7 +72,10 @@ export async function requireCsrf(req: Request): Promise<NextResponse | null> {
   const referer = req.headers.get('referer');
   const allowed = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3003';
 
-  if (!origin && !referer) return null;
+  // SECURITY FIX: Reject if BOTH origin AND referer are missing (prevents CSRF bypass)
+  if (!origin && !referer) {
+    return NextResponse.json({ error: 'CSRF: missing origin/referer headers' }, { status: 403 });
+  }
 
   const source = origin || referer || '';
   if (!source.startsWith(allowed)) {
